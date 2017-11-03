@@ -65,7 +65,7 @@ def train_epoch(data_iter, model, optim):
         num_correct += (pred==label).sum().data[0]
 
         if (i+1) % log_interval == 0:
-            print("batch {} nll_loss {%2f}, acc {%2f}".format(
+            print("batch {} nll_loss {0:.2f}, acc {0:.2f}".format(
                 i+1, nll.data[0], num_correct/float(num_data)
                 ))
 
@@ -76,7 +76,7 @@ def train_epoch(data_iter, model, optim):
 ###############DATA, MODEL, OPTIM########
 start = time.time()
 train_iter, test_iter = data_input(batch_size, mode)
-print("load data cost {} sec".format(time.time()-start))
+print("load data cost {0:.2f} sec".format(time.time()-start))
 
 model = MLP(preprocessing.vocab_size, 20)
 if use_cuda:
