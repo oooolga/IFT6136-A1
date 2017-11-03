@@ -10,11 +10,11 @@ from torch.autograd import Variable
 
 #########CONFIG####################
 use_cuda = torch.cuda.is_available()
-batch_size = 500
+batch_size = 100
 mode = 0 # preprocessing mode
 num_epochs = 20
 lr = 0.01
-log_interval = 50
+log_interval = 20
 ##################################
 
 ################DEFINITION#########
@@ -47,18 +47,29 @@ class MLP(nn.Module):
 
 
 def train_epoch(data_iter, model, optim):
+    model.train()
+    num_data = 0
+    num_correct = 0
     for i, (data, label) in enumerate(data_iter):
         data = Variable(torch.Tensor(data))
         label = Variable(torch.LongTensor(label))
         logprobs = model(data)
-        nll = F.nll_loss(logprobs, label)
 
+        nll = F.nll_loss(logprobs, label)
         optim.zero_grad()
         nll.backward()
         optim.step()
 
+        num_data += data.size(0)
+        pred = torch.max(logprobs, -1)[1]
+        num_correct += (pred==label).sum().data[0]
+
         if (i+1) % log_interval == 0:
-            print("batch {} nll_loss: {}".format(i, nll.data[0]))
+            print("batch {} nll_loss {%2f}, acc {%2f}".format(
+                i+1, nll.data[0], num_correct/float(num_data)
+                ))
+
+
 
 ########################################
 
