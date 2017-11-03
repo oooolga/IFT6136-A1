@@ -45,13 +45,21 @@ class MLP(nn.Module):
         logprobs = F.log_softmax(out)
         return logprobs
 
+def _to_torch(data, label):
+    if use_cuda:
+        data = Variable(torch.Tensor(data)).cuda()
+        label = Variable(torch.LongTensor(label)).cuda()
+    else:
+        data = Variable(torch.Tensor(data))
+        label = Variable(torch.LongTensor(label))
+    return data, label
+
 def eval_epoch(data_iter, model):
     model.eval()
     num_data = 0
     num_correct = 0
     for i, (data, label) in enumerate(data_iter):
-        data = Variable(torch.Tensor(data))
-        label = Variable(torch.LongTensor(label))
+        data, label = _to_torch(data, label)
         logprobs = model(data)
 
         num_data += data.size(0)
@@ -65,8 +73,7 @@ def train_epoch(data_iter, model, optim):
     num_data = 0
     num_correct = 0
     for i, (data, label) in enumerate(data_iter):
-        data = Variable(torch.Tensor(data))
-        label = Variable(torch.LongTensor(label))
+        data, label = _to_torch(data, label)
         logprobs = model(data)
 
         nll = F.nll_loss(logprobs, label)
