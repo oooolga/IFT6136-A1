@@ -3,10 +3,7 @@ import numpy as np
 import pickle
 import argparse
 import math
-
-parser = argparse.ArgumentParser()
-parser.add_argument("--mode", type=int, default=0, help="0: not processing. 1: tf_idf. 2: standardization")
-args = parser.parse_args()
+import os
 
 idx2word = open("./raw/vocabulary.txt", "r").read().splitlines()
 vocab_size = len(idx2word)
@@ -35,28 +32,74 @@ def read_data(data_file, label_file):
     label = np.array([int(line) for line in label_lines ])
     return data, label
 
-train_data, train_label = read_data("./raw/train.data", "./raw/train.label")
-test_data, test_label = read_data("./raw/test.data", "./raw/test.label")
-num_doc = len(train_label)
+class data_iter:
+    def __init__(self, data, label, bsz):
+        self._data = data
+        self._label = label
+        self._bsz = bsz
+        self._num_batch = math.ceil(len(label) / float(bsz))
 
-if args.mode == 1:
-    # compute IDF for each term
-    for word in range(vocab_size):
-        num_doc_has_term = 0
-        for doc in range(num_doc):
-            if train_data[doc, word] > 0:
-                num_doc_has_term += 1
-        idf = math.log(num_doc / float(num_doc_has_term))
-        ipdb.set_trace()
+    def __iter__(self):
+        num_data = len(self._label)
+        self._curr_batch = 0
+        # shuffle data
+        self._rand_indices = np.random.choice(num_data, num_data, False)
+        return self
 
-        # modify train_data, test_data
-        train_data[:, word] = train_data[:, word] * idf
-        test_data[:, word] = test_data[:, word] * idf
-    raise NotImplementedError
-if args.mode == 2:
-    raise NotImplementedError
-else:
-    pickle.dump({"train":(train_data, train_label), "test":(test_data, test_label)}, open("data.dat", "wb"))
+    def __next__(self):
+        if self._curr_batch == self._num_batch:
+            raise StopIteration
+        indices = self._rand_indices[
+                self._curr_batch*self._bsz:(self._curr_batch+1)*self._bsz
+                ]
+        data_batch = self._data[indices]
+        label_batch = self._label[indices]
+        self._curr_batch += 1
+        return data_batch, label_batch
 
+def data_input(batch_size, mode=0):
+    """
+    mode 0: no preprocessing
+    mode 1: tfidf
+    mode 2: standardization
+    """
+    print("reading data...")
+    train_data, train_label = read_data("./raw/train.data", "./raw/train.label")
+    test_data, test_label = read_data("./raw/test.data", "./raw/test.label")
+    if mode == 1:
+        #ipdb.set_trace()
+
+        if os.path.isfile("./idf.pkl"):
+            print("loading idf...")
+            idf = pickle.load(open("./idf.pkl", "rb"))
+        else:
+            print("computing idf...")
+            corpus = np.concatenate([train_data, test_data], 0)
+            idf = np.sum((corpus > 0), 0)
+            idf = -np.log(idf / len(corpus))
+            pickle.dump(idf, open("./idf.pkl", "wb"), protocol=4)
+        print("computing tfidf...")
+        train_data = train_data * idf
+        test_data = test_data * idf
+
+    if mode == 2:
+        eps = 1e-5
+        if os.path.isfile("./stats.pkl"):
+            mean, sigma = pickle.load(open("./stats.pkl", 'rb'))
+        else:
+            mean = np.mean(train_data, 0)
+            sigma = np.sqrt(np.var(train_data, 0))
+            pickle.dump(
+                    (mean, sigma),
+                    open('./stats.pkl', 'wb'),
+                    protocol=4,
+                    )
+        train_data = (train_data - mean) / (sigma + eps)
+        test_data = (test_data - mean) / (sigma + eps)
+
+
+    train_iter = data_iter(train_data, train_label, batch_size)
+    test_iter = data_iter(test_data, test_label, batch_size)
+    return train_iter, test_iter
 
 
