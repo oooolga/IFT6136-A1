@@ -45,6 +45,20 @@ class MLP(nn.Module):
         logprobs = F.log_softmax(out)
         return logprobs
 
+def eval_epoch(data_iter, model):
+    model.eval()
+    num_data = 0
+    num_correct = 0
+    for i, (data, label) in enumerate(data_iter):
+        data = Variable(torch.Tensor(data))
+        label = Variable(torch.LongTensor(label))
+        logprobs = model(data)
+
+        num_data += data.size(0)
+        pred = torch.max(logprobs, -1)[1]
+        num_correct += (pred==label).sum().data[0]
+
+    return num_correct*100 / float(num_data)
 
 def train_epoch(data_iter, model, optim):
     model.train()
@@ -68,6 +82,7 @@ def train_epoch(data_iter, model, optim):
             print("batch {} nll_loss {:.2f}, acc {:.2f}%".format(
                 i+1, nll.data[0], num_correct*100/float(num_data)
                 ))
+    return num_correct*100 / float(num_data)
 
 
 
@@ -88,4 +103,8 @@ optim = torch.optim.SGD(model.parameters(), lr=lr, momentum=0.9)
 
 for epoch in range(num_epochs):
     print('-----------Epoch {}---------'.format(epoch))
-    train_epoch(train_iter, model, optim)
+    train_acc = train_epoch(train_iter, model, optim)
+    eval_acc = eval_epoch(test_iter, model)
+    print("epoch {} train_acc {:.2f}% eval_acc {:.2f}%".format(
+        epoch+1, train_acc, eval_acc
+        ))
