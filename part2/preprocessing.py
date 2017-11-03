@@ -4,6 +4,7 @@ import pickle
 import argparse
 import math
 import os
+import torch
 
 idx2word = open("./raw/vocabulary.txt", "r").read().splitlines()
 vocab_size = len(idx2word)
@@ -29,7 +30,7 @@ def read_data(data_file, label_file):
     data = np.zeros([num_docs, vocab_size])
     for line in data_lines:
         data[_doc_id(line), _word_id(line)] += _freq(line)
-    label = np.array([int(line) for line in label_lines ])
+    label = np.array([int(line)-1 for line in label_lines ])
     return data, label
 
 class data_iter:
