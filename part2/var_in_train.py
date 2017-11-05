@@ -75,7 +75,9 @@ if use_cuda:
 optim = torch.optim.SGD(model.parameters(), lr=lr, momentum=0.9)
 
 ######################################
+import ipdb
 losses = []
+train_iter.__iter__()
 for step in range(5000):
     try:
         data, label = train_iter.__next__()
@@ -90,7 +92,7 @@ for step in range(5000):
     optim.zero_grad()
     nll.backward()
     optim.step()
-
+    print("step {} nll {:.2f}".format(step+1, nll.data[0]))
     losses.append(nll.data[0])
 
 pickle.dump(losses, open("train_loss{}.pkl".format(bsz), "wb"))

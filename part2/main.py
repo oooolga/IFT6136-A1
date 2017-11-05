@@ -16,11 +16,11 @@ import os
 
 #########CONFIG####################
 parser = argparse.ArgumentParser()
-parser.add_argument("--bsz", default=200, type=int)
+parser.add_argument("--bsz", default=64, type=int)
 parser.add_argument("--mode", default=0, type=int)
 parser.add_argument("--num_epochs", default=20, type=int)
 parser.add_argument("--lr", default=0.01, type=float)
-parser.add_argument("--out", default="./result/", type=str)
+parser.add_argument("--out", default="./result_mode0/", type=str)
 parser.add_argument("--log_interval", default=5, type=int)
 args = parser.parse_args()
 use_cuda = torch.cuda.is_available()
@@ -33,14 +33,15 @@ class MLP(nn.Module):
         self.linear1 = nn.Linear(num_inputs, 100)
         self.linear1.bias.data.zero_()
         nn.init.xavier_uniform(
-                self.linear1.weight.data,
-                gain=nn.init.calculate_gain('relu')
+                self.linear1.weight,
+                gain=1
                 )
 
         self.linear2 = nn.Linear(100, num_classes)
         self.linear2.bias.data.zero_()
         nn.init.xavier_uniform(
-                self.linear2.weight.data,
+                self.linear2.weight,
+                gain=1
                 )
 
 
@@ -51,8 +52,7 @@ class MLP(nn.Module):
         """
         out = F.relu(self.linear1(inputs))
         out = self.linear2(out)
-        logprobs = F.log_softmax(out)
-        return logprobs
+        return out
 
 
 def _to_torch(data, label):
@@ -71,30 +71,37 @@ def eval_epoch(data_iter, model):
     num_correct = 0
     for i, (data, label) in enumerate(data_iter):
         data, label = _to_torch(data, label)
-        logprobs = model(data)
+        out = model(data)
 
         num_data += data.size(0)
-        pred = torch.max(logprobs, -1)[1]
+        pred = torch.max(out, -1)[1]
         num_correct += (pred==label).sum().data[0]
 
     return num_correct*100 / float(num_data)
 
-
+criterion = torch.nn.CrossEntropyLoss()
 def train_epoch(data_iter, model, optim):
     model.train()
     num_data = 0
     num_correct = 0
-    for i, (data, label) in enumerate(data_iter):
-        data, label = _to_torch(data, label)
-        logprobs = model(data)
+    data = torch.FloatTensor(args.bsz, preprocessing.vocab_size)
+    label = torch.LongTensor(args.bsz)
+    data = Variable(data)
+    label = Variable(label)
+    if use_cuda:
+        data, label = data.cuda(), label.cuda()
 
-        nll = F.nll_loss(logprobs, label)
+    for i, (_data, _label) in enumerate(data_iter):
+        data.copy_(_data)
+        label.copy_(_label)
+        out = model(data)
+        nll = criterion(out, label)
         optim.zero_grad()
         nll.backward()
         optim.step()
 
         num_data += data.size(0)
-        pred = torch.max(logprobs, -1)[1]
+        pred = torch.max(out, -1)[1]
         num_correct += (pred==label).sum().data[0]
 
         if (i+1) % args.log_interval == 0:
@@ -122,12 +129,14 @@ optim = torch.optim.SGD(model.parameters(), lr=args.lr, momentum=0.9)
 train_accs = []
 test_accs = []
 for epoch in range(args.num_epochs):
-    print('-----------Epoch {}---------'.format(epoch))
+    start = time.time()
+    print('-----------Epoch {}---------'.format(epoch+1))
     train_acc = train_epoch(train_iter, model, optim)
     test_acc = eval_epoch(test_iter, model)
     print("epoch {} train_acc {:.2f}% eval_acc {:.2f}%".format(
         epoch+1, train_acc, test_acc
         ))
+    print("use {:.2f} sec".format(time.time()-start))
     train_accs.append(train_acc)
     test_accs.append(test_acc)
 
