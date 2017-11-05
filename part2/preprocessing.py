@@ -48,8 +48,8 @@ def _get_stats(data_file):
         sum[_word_id(line)] += _freq(line)
         sq_sum[_word_id(line)] += _freq(line)**2
 
-    mean = sum / num_docs
-    sq_mean = sq_sum / num_docs
+    mean = (sum+1) / (num_docs+1)
+    sq_mean = (sq_sum+1) / (num_docs+1)
     sigma = torch.sqrt(sq_mean - mean.pow(2))
 
     idf = 1 - torch.log((num_doc_contains_term +1) / (num_docs+1))
@@ -101,6 +101,7 @@ def data_input(batch_size, mode=0):
     train_data, train_label = read_data("./raw/train.data", "./raw/train.label")
     test_data, test_label = read_data("./raw/test.data", "./raw/test.label")
     idf, mean, sigma = _get_stats("./raw/train.data")
+
     train_iter = data_iter(
             train_data, train_label, batch_size,
             idf, mean, sigma, mode

@@ -17,11 +17,11 @@ import os
 #########CONFIG####################
 parser = argparse.ArgumentParser()
 parser.add_argument("--bsz", default=64, type=int)
-parser.add_argument("--mode", default=1, type=int)
+parser.add_argument("--mode", default=2, type=int)
 parser.add_argument("--num_epochs", default=20, type=int)
-parser.add_argument("--lr", default=0.01, type=float)
-parser.add_argument("--out", default="./result_mode1/", type=str)
-parser.add_argument("--log_interval", default=5, type=int)
+parser.add_argument("--lr", default=0.004, type=float)
+parser.add_argument("--out", default="./result_mode2/", type=str)
+parser.add_argument("--log_interval", default=20, type=int)
 args = parser.parse_args()
 use_cuda = torch.cuda.is_available()
 ##################################
@@ -93,6 +93,7 @@ def train_epoch(data_iter, model, optim):
 
         data.data.resize_(_data.size()).copy_(_data)
         label.data.resize_(_label.size()).copy_(_label)
+
         out = model(data)
         nll = criterion(out, label)
         optim.zero_grad()
@@ -147,4 +148,6 @@ epochs = [ e+1 for e in range(args.num_epochs) ]
 train_plt, = plt.plot(epochs, train_accs, "r-")
 test_plt, = plt.plot(epochs, test_accs, "b-")
 plt.legend([train_plt, test_plt], ["train acc", "test acc"])
+plt.xlabel("Epochs")
+plt.ylabel("Accuracy")
 plt.savefig(os.path.join(args.out, "acc.png"))

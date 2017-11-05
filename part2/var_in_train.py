@@ -13,11 +13,12 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import os
+import pickle
 
 #########CONFIG####################
-mode = 0
-lr = 0.2
-bsz = 100
+mode = 1
+lr = 0.002
+bsz = 1
 use_cuda = torch.cuda.is_available()
 ##################################
 
