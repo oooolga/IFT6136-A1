@@ -52,15 +52,20 @@ def _get_stats(data_file):
     sq_mean = sq_sum / num_docs
     sigma = torch.sqrt(sq_mean - mean.pow(2))
 
-    idf = - torch.log(num_doc_contains_term / num_docs)
+    idf = 1 - torch.log((num_doc_contains_term +1) / (num_docs+1))
     return idf, mean, sigma
 
 class data_iter:
-    def __init__(self, data, label, bsz):
+    def __init__(self, data, label, bsz, idf, mean, sigma, mode=0):
         self._data = data
         self._label = label
         self._bsz = bsz
         self._num_batch = math.ceil(len(label) / float(bsz))
+
+        self._mode = mode
+        self._idf = idf
+        self._mean = mean
+        self._sigma = sigma
 
     def __iter__(self):
         num_data = len(self._label)
@@ -79,6 +84,10 @@ class data_iter:
         data_batch = self._data[indices]
         label_batch = self._label[indices]
         self._curr_batch += 1
+        if self._mode == 1:
+            data_batch = data_batch * self._idf
+        if self._mode == 2:
+            data_batch = (data_batch - self._mean) / (1e-5+self._sigma)
         return data_batch, label_batch
 
 def data_input(batch_size, mode=0):
@@ -88,20 +97,18 @@ def data_input(batch_size, mode=0):
     mode 2: standardization
     """
     print("reading data...")
+
     train_data, train_label = read_data("./raw/train.data", "./raw/train.label")
     test_data, test_label = read_data("./raw/test.data", "./raw/test.label")
     idf, mean, sigma = _get_stats("./raw/train.data")
-    if mode == 1:
-        train_data = train_data * idf
-        test_data = test_data * idf
-
-    if mode == 2:
-        eps = 1e-5
-        train_data = (train_data - mean) / (sigma + eps)
-        test_data = (test_data - mean) / (sigma + eps)
-
-    train_iter = data_iter(train_data, train_label, batch_size)
-    test_iter = data_iter(test_data, test_label, batch_size)
+    train_iter = data_iter(
+            train_data, train_label, batch_size,
+            idf, mean, sigma, mode
+            )
+    test_iter = data_iter(
+            test_data, test_label, batch_size,
+            idf, mean, sigma, mode
+            )
     return train_iter, test_iter
 
 
