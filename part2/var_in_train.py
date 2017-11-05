@@ -50,15 +50,6 @@ class MLP(nn.Module):
         return logprobs
 
 
-def _to_torch(data, label):
-    if use_cuda:
-        data = Variable(torch.Tensor(data)).cuda()
-        label = Variable(torch.LongTensor(label)).cuda()
-    else:
-        data = Variable(torch.Tensor(data))
-        label = Variable(torch.LongTensor(label))
-    return data, label
-
 ########################################
 
 
@@ -78,17 +69,26 @@ optim = torch.optim.SGD(model.parameters(), lr=lr, momentum=0.9)
 import ipdb
 losses = []
 train_iter.__iter__()
+data = torch.FloatTensor(bsz, preprocessing.vocab_size)
+label = torch.LongTensor(bsz)
+data = Variable(data)
+label = Variable(label)
+
+criterion = torch.nn.CrossEntropyLoss()
+
+if use_cuda:
+    data, label = data.cuda(), label.cuda()
 for step in range(5000):
     try:
-        data, label = train_iter.__next__()
+        _data, _label = train_iter.__next__()
     except StopIteration:
         train_iter.__iter__()
-        data, label = train_iter.__next__()
+        _data, _label = train_iter.__next__()
 
-    data, label = _to_torch(data, label)
-    logprobs = model(data)
-
-    nll = F.nll_loss(logprobs, label)
+    data.data.resize_(_data.size()).copy_(_data)
+    label.data.resize_(_label.size()).copy_(_label)
+    out = model(data)
+    nll = criterion(out, label)
     optim.zero_grad()
     nll.backward()
     optim.step()

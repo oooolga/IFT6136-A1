@@ -17,7 +17,7 @@ import os
 #########CONFIG####################
 parser = argparse.ArgumentParser()
 parser.add_argument("--bsz", default=64, type=int)
-parser.add_argument("--mode", default=0, type=int)
+parser.add_argument("--mode", default=1, type=int)
 parser.add_argument("--num_epochs", default=20, type=int)
 parser.add_argument("--lr", default=0.01, type=float)
 parser.add_argument("--out", default="./result_mode0/", type=str)
@@ -54,23 +54,21 @@ class MLP(nn.Module):
         out = self.linear2(out)
         return out
 
-
-def _to_torch(data, label):
-    if use_cuda:
-        data = Variable(torch.Tensor(data)).cuda()
-        label = Variable(torch.LongTensor(label)).cuda()
-    else:
-        data = Variable(torch.Tensor(data))
-        label = Variable(torch.LongTensor(label))
-    return data, label
-
-
 def eval_epoch(data_iter, model):
     model.eval()
     num_data = 0
     num_correct = 0
-    for i, (data, label) in enumerate(data_iter):
-        data, label = _to_torch(data, label)
+    data = torch.FloatTensor(args.bsz, preprocessing.vocab_size)
+    label = torch.LongTensor(args.bsz)
+    data = Variable(data)
+    label = Variable(label)
+    if use_cuda:
+        data, label = data.cuda(), label.cuda()
+
+    for i, (_data, _label) in enumerate(data_iter):
+        data.data.resize_(_data.size()).copy_(_data)
+        label.data.resize_(_label.size()).copy_(_label)
+
         out = model(data)
 
         num_data += data.size(0)
@@ -92,8 +90,9 @@ def train_epoch(data_iter, model, optim):
         data, label = data.cuda(), label.cuda()
 
     for i, (_data, _label) in enumerate(data_iter):
-        data.copy_(_data)
-        label.copy_(_label)
+
+        data.data.resize_(_data.size()).copy_(_data)
+        label.data.resize_(_label.size()).copy_(_label)
         out = model(data)
         nll = criterion(out, label)
         optim.zero_grad()

@@ -27,11 +27,11 @@ def read_data(data_file, label_file):
     num_docs = _doc_id(data_lines[-1]) + 1
     assert num_docs == len(label_lines)
 
-    data = np.zeros([num_docs, vocab_size])
+    data = torch.zeros(num_docs, vocab_size)
     for line in data_lines:
         data[_doc_id(line), _word_id(line)] += _freq(line)
     label = np.array([int(line)-1 for line in label_lines ])
-    return data, label
+    return data, torch.LongTensor(label)
 
 class data_iter:
     def __init__(self, data, label, bsz):
@@ -53,6 +53,7 @@ class data_iter:
         indices = self._rand_indices[
                 self._curr_batch*self._bsz:(self._curr_batch+1)*self._bsz
                 ]
+        indices = torch.LongTensor(indices)
         data_batch = self._data[indices]
         label_batch = self._label[indices]
         self._curr_batch += 1
@@ -69,15 +70,15 @@ def data_input(batch_size, mode=0):
     test_data, test_label = read_data("./raw/test.data", "./raw/test.label")
     if mode == 1:
         #ipdb.set_trace()
-
         if os.path.isfile("./idf.pkl"):
             print("loading idf...")
             idf = pickle.load(open("./idf.pkl", "rb"))
         else:
             print("computing idf...")
-            corpus = np.concatenate([train_data, test_data], 0)
-            idf = np.sum((corpus > 0), 0)
-            idf = -np.log(idf / len(corpus))
+            ipdb.set_trace()
+            corpus = torch.cat([train_data, test_data])
+            idf = torch.sum((corpus > 0), 0)
+            idf = -torch.log(idf / len(corpus))
             pickle.dump(idf, open("./idf.pkl", "wb"), protocol=4)
         print("computing tfidf...")
         train_data = train_data * idf
@@ -88,8 +89,8 @@ def data_input(batch_size, mode=0):
         if os.path.isfile("./stats.pkl"):
             mean, sigma = pickle.load(open("./stats.pkl", 'rb'))
         else:
-            mean = np.mean(train_data, 0)
-            sigma = np.sqrt(np.var(train_data, 0))
+            mean = torch.mean(train_data, 0)
+            sigma = torch.sqrt(torch.var(train_data, 0))
             pickle.dump(
                     (mean, sigma),
                     open('./stats.pkl', 'wb'),
