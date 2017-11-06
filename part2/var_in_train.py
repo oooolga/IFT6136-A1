@@ -17,7 +17,7 @@ import pickle
 
 #########CONFIG####################
 mode = 1
-lr = 0.002
+lr = 0.1
 bsz = 1
 use_cuda = torch.cuda.is_available()
 ##################################
@@ -64,7 +64,7 @@ model = MLP(preprocessing.vocab_size, 20)
 if use_cuda:
     model.cuda()
 
-optim = torch.optim.SGD(model.parameters(), lr=lr, momentum=0.9)
+optim = torch.optim.SGD(model.parameters(), lr=lr, momentum=0)
 
 ######################################
 import ipdb
