@@ -15,6 +15,8 @@ import matplotlib.pyplot as plt
 import os
 import pickle
 
+import ipdb
+
 #########CONFIG####################
 mode = 1
 lr = 0.1
@@ -79,6 +81,7 @@ criterion = torch.nn.CrossEntropyLoss()
 
 if use_cuda:
     data, label = data.cuda(), label.cuda()
+
 for step in range(5000):
     try:
         _data, _label = train_iter.__next__()
