@@ -14,8 +14,10 @@ def _word_id(line):
 def _doc_id(line):
     return int(line.split()[0])-1
 
-def _read_data(data_file, label_file):
-
+def read_data(data_file, label_file):
+    """
+    :return: data [doc_size, vocab_size]. label [doc_size]
+    """
     data_lines = open(data_file, "r").read().splitlines()
     label_lines = open(label_file, "r").read().splitlines()
     num_docs = _doc_id(data_lines[-1]) + 1
@@ -24,11 +26,18 @@ def _read_data(data_file, label_file):
     data = np.zeros([num_docs, vocab_size])
     for line in data_lines:
         data[_doc_id(line), _word_id(line)] += _freq(line)
-
-    ipdb.set_trace()
     label = np.array([int(line) for line in label_lines ])
     return data, label
 
+def tfidf(data):
+    """
+    Term frequency use normalized term freq.
+    IDF use logarithmically scaled inverse fraction of the documents that contain the word.
+    """
+    ipdb.set_trace()
+    #tf = np.log(data)
 
-_read_data("./raw/train.data", "./raw/train.label")
+train_data, train_label = read_data("./raw/train.data", "./raw/train.label")
+test_data, test_label = read_data("./raw/test.data", "./raw/test.label")
 
+train_tfidf = tfidf(train_data)
