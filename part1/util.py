@@ -11,7 +11,11 @@ import torch.nn.functional as F
 import torch.optim as optim
 
 import numpy as np
-import argparse
+import argparse, os
+
+import matplotlib as mpl
+mpl.use('Agg')
+import matplotlib.pyplot as plt
 
 from model import *
 from train_valid import *
@@ -25,6 +29,8 @@ def load_data(batch_size, test_batch_size):
 		batch_size=batch_size, shuffle=True)
 	test_loader = torch.utils.data.DataLoader(
 		dset.MNIST('data', train=False, download=True, transform=transforms.ToTensor()),
-		batch_size=batch_size, shuffle=True)
+		batch_size=test_batch_size, shuffle=True)
+
+	pdb.set_trace()
 
 	return train_loader, test_loader

@@ -13,10 +13,7 @@ def parse():
 						help='Mini-batch size for training')
 	parser.add_argument('--test_batch_size', default=1000, type=int,
 						help='Mini-batch size for testing')
-	parser.add_argument('--plot_iter', default=200, type=int, help='Plot iteration')
 	parser.add_argument('--epoch', default=10, type=int, help='Number of epochs')
-	parser.add_argument('-w', '--weight_init_method', default='glorot', type=str,
-						help='Weight initialization method')
 	parser.add_argument('-r', '--result_path', default='./result', type=str,
 						help='Result path')
 
@@ -25,7 +22,6 @@ def parse():
 
 def output_model_setting(args):
 	print('Learning rate: {}'.format(args.learning_rate))
-	print('Weight initialization method: {}'.format(args.weight_init_method))
 	print('Mini-batch size: {}'.format(args.batch_size))
 	print('Nonlinearity: {}\n'.format('ReLU'))
 
@@ -33,12 +29,36 @@ if __name__ == '__main__':
 
 	args = parse()
 
+	output_model_setting(args)
+
+	torch.manual_seed(args.seed)
 	torch.cuda.manual_seed_all(args.seed)
 
 	train_loader, test_loader = load_data(batch_size=args.batch_size,
 										  test_batch_size=args.test_batch_size)
 
-	model = Net(500, 500, args.weight_init_method)
+	results = {}
 
-	run(model, train_loader, test_loader, total_epoch=args.epoch,
-		lr = args.learning_rate, momentum=args.momentum, result_path=args.result_path)
+	for w_m in weight_init_methods:
+		model = Net(500, 500, w_m)
+
+		method_result, _ = run(model, train_loader, test_loader,
+							   total_epoch=args.epoch,
+							   lr = args.learning_rate,
+							   momentum=args.momentum,
+							   result_path=args.result_path)
+
+		results[w_m] = method_result
+
+
+	plt.plot(range(args.epoch), results['zero'], 'ro-', label='zero')
+	plt.plot(range(args.epoch), results['normal'], 'bs-', label='normal')
+	plt.plot(range(args.epoch), results['glorot'], 'g^-', label='glorot')
+
+	plt.xlabel('Epoch')
+	plt.ylabel('Loss')
+
+	plt.title('Epoch vs Loss for 3 Different Initialization Methods')
+	plt.legend(loc=1)
+
+	plt.savefig('{}/main_init_result.png'.format(args.result_path))
