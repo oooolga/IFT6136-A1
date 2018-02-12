@@ -37,12 +37,17 @@ if __name__ == '__main__':
 	output_model_setting(args)
 
 	torch.manual_seed(args.seed)
-	torch.cuda.manual_seed_all(args.seed)
+	
+	if use_cuda:
+		torch.cuda.manual_seed_all(args.seed)
 
 	train_loader, test_loader = load_data(batch_size=args.batch_size,
 										  test_batch_size=args.test_batch_size)
 
 	model = Net(500, 500, args.weight_init_method)
+
+	if use_cuda:
+		model.cuda()
 
 	if args.num_valid:
 		num_valid_batch = args.num_valid//args.test_batch_size

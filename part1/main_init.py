@@ -32,7 +32,9 @@ if __name__ == '__main__':
 	output_model_setting(args)
 
 	torch.manual_seed(args.seed)
-	torch.cuda.manual_seed_all(args.seed)
+
+	if use_cuda:
+		torch.cuda.manual_seed_all(args.seed)
 
 	train_loader, _ = load_data(batch_size=args.batch_size,
 								test_batch_size=args.test_batch_size)
@@ -41,6 +43,9 @@ if __name__ == '__main__':
 
 	for w_m in weight_init_methods:
 		model = Net(500, 500, w_m)
+
+		if use_cuda:
+			model.cuda()
 
 		method_result, _, _, _, _, _ = run(model, train_loader, None,
 										   total_epoch=args.epoch,

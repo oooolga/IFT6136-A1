@@ -21,6 +21,7 @@ from model import *
 from train_valid import *
 
 weight_init_methods = ['zero', 'normal', 'glorot']
+use_cuda = torch.cuda.is_available()
 
 def load_data(batch_size, test_batch_size):
 

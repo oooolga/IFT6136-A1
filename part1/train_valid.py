@@ -11,6 +11,9 @@ def _train(model, train_loader, optimizer, epoch):
 
 		data = data.view(-1, 784)
 
+		if use_cuda:
+			data, target = data.cuda(), target.cuda()
+
 		data, target = Variable(data, requires_grad=False), Variable(target, requires_grad=False)
 
 		optimizer.zero_grad()
@@ -37,6 +40,9 @@ def _evaluate_data_set(model, data_loader, start=None, end=None):
 			continue
 
 		data = data.view(-1, 784)
+
+		if use_cuda:
+			data, target = data.cuda(), target.cuda()
 
 		data, target = Variable(data, volatile=True, requires_grad=False), \
 					Variable(target, requires_grad=False)
