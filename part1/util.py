@@ -31,6 +31,4 @@ def load_data(batch_size, test_batch_size):
 		dset.MNIST('data', train=False, download=True, transform=transforms.ToTensor()),
 		batch_size=test_batch_size, shuffle=True)
 
-	pdb.set_trace()
-
 	return train_loader, test_loader

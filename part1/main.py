@@ -19,6 +19,8 @@ def parse():
 						help='Weight initialization method')
 	parser.add_argument('-r', '--result_path', default='./result', type=str,
 						help='Result path')
+	parser.add_argument('-v', '--num_valid', default=None, type=int,
+						help='Number of validation data')
 
 	args = parser.parse_args()
 	return args
@@ -32,7 +34,9 @@ def output_model_setting(args):
 if __name__ == '__main__':
 
 	args = parse()
+	output_model_setting(args)
 
+	torch.manual_seed(args.seed)
 	torch.cuda.manual_seed_all(args.seed)
 
 	train_loader, test_loader = load_data(batch_size=args.batch_size,
@@ -40,5 +44,24 @@ if __name__ == '__main__':
 
 	model = Net(500, 500, args.weight_init_method)
 
-	run(model, train_loader, test_loader, total_epoch=args.epoch,
-		lr = args.learning_rate, momentum=args.momentum, result_path=args.result_path)
+	if args.num_valid:
+		num_valid_batch = args.num_valid//args.test_batch_size
+	else:
+		num_valid_batch = None
+
+
+	train_loss, train_acc, val_loss, val_acc, test_loss, test_acc = \
+		run(model, train_loader, test_loader, total_epoch=args.epoch,
+			lr = args.learning_rate, momentum=args.momentum, result_path=args.result_path,
+			num_valid_batch=num_valid_batch)
+
+	plt.plot(range(1, 1+args.epoch), train_acc, 'ro-', label='train')
+	plt.plot(range(1, 1+args.epoch), val_acc, 'bs-', label='valid')
+
+	plt.xlabel('Epoch')
+	plt.ylabel('Accuracy')
+
+	plt.title('Epoch vs Accuracy')
+	plt.legend(loc=4)
+
+	plt.savefig('{}/Learning_Curves_3_result.png'.format(args.result_path))

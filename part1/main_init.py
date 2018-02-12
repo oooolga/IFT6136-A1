@@ -34,19 +34,19 @@ if __name__ == '__main__':
 	torch.manual_seed(args.seed)
 	torch.cuda.manual_seed_all(args.seed)
 
-	train_loader, test_loader = load_data(batch_size=args.batch_size,
-										  test_batch_size=args.test_batch_size)
+	train_loader, _ = load_data(batch_size=args.batch_size,
+								test_batch_size=args.test_batch_size)
 
 	results = {}
 
 	for w_m in weight_init_methods:
 		model = Net(500, 500, w_m)
 
-		method_result, _ = run(model, train_loader, test_loader,
-							   total_epoch=args.epoch,
-							   lr = args.learning_rate,
-							   momentum=args.momentum,
-							   result_path=args.result_path)
+		method_result, _, _, _, _, _ = run(model, train_loader, None,
+										   total_epoch=args.epoch,
+										   lr = args.learning_rate,
+										   momentum=args.momentum,
+										   result_path=args.result_path)
 
 		results[w_m] = method_result
 
