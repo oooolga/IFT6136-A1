@@ -19,7 +19,7 @@ class Net(nn.Module):
 
 		print 'Number of features of the input data: {}'.format(in_dim)
 		print 'Number of hidden units in layer 1: {}'.format(fc1_out_dim)
-		print 'Number of hidden units in layer 2: {}'.format(fc1_out_dim)
+		print 'Number of hidden units in layer 2: {}'.format(fc2_out_dim)
 		print 'Number of output classes: {}\n'.format(out_dim)
 
 		print 'Total number of parameters: {}\n'.format(self.cal_total_num_parameters())

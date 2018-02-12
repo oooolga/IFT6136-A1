@@ -17,11 +17,12 @@ import matplotlib as mpl
 mpl.use('Agg')
 import matplotlib.pyplot as plt
 
-from model import *
-from train_valid import *
 
 weight_init_methods = ['zero', 'normal', 'glorot']
 use_cuda = torch.cuda.is_available()
+
+from model import *
+from train_valid import *
 
 def load_data(batch_size, test_batch_size):
 

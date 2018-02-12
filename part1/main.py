@@ -44,7 +44,7 @@ if __name__ == '__main__':
 	train_loader, test_loader = load_data(batch_size=args.batch_size,
 										  test_batch_size=args.test_batch_size)
 
-	model = Net(500, 500, args.weight_init_method)
+	model = Net(810, 800, args.weight_init_method)
 
 	if use_cuda:
 		model.cuda()
@@ -69,4 +69,4 @@ if __name__ == '__main__':
 	plt.title('Epoch vs Accuracy')
 	plt.legend(loc=4)
 
-	plt.savefig('{}/Learning_Curves_3_result.png'.format(args.result_path))
+	plt.savefig('{}/Learning_Curves_4_result.png'.format(args.result_path))
