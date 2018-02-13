@@ -19,8 +19,8 @@ def parse():
 						help='Weight initialization method')
 	parser.add_argument('-r', '--result_path', default='./result', type=str,
 						help='Result path')
-	parser.add_argument('-v', '--num_valid', default=None, type=int,
-						help='Number of validation data')
+	parser.add_argument('-a', '--alpha', default=1.0, type=float,
+						help='Alpha')
 
 	args = parser.parse_args()
 	return args
@@ -29,36 +29,51 @@ def output_model_setting(args):
 	print('Learning rate: {}'.format(args.learning_rate))
 	print('Weight initialization method: {}'.format(args.weight_init_method))
 	print('Mini-batch size: {}'.format(args.batch_size))
-	print('Nonlinearity: {}\n'.format('ReLU'))
+	print('Nonlinearity: {}'.format('ReLU'))
+	print('Alpha: {}\n'.format(args.alpha))
 
 if __name__ == '__main__':
 
 	args = parse()
 	output_model_setting(args)
 
+	if args.alpha > 1:
+		print 'Alpha has to be in range (0,1].'
+		exit()
+
 	torch.manual_seed(args.seed)
 	
 	if use_cuda:
 		torch.cuda.manual_seed_all(args.seed)
 
-	train_loader, test_loader = load_data(batch_size=args.batch_size,
-										  test_batch_size=args.test_batch_size)
+	train_loader, valid_loader, test_loader = load_data(batch_size=args.batch_size,
+										  test_batch_size=args.test_batch_size,
+										  alpha=args.alpha)
 
-	model = Net(810, 800, args.weight_init_method)
+	print 'Number of training data: {}\n'.format(len(train_loader.dataset))
+
+	model = Net(128, 128, args.weight_init_method)
 
 	if use_cuda:
 		model.cuda()
 
-	if args.num_valid:
-		num_valid_batch = args.num_valid//args.test_batch_size
-	else:
-		num_valid_batch = None
-
 
 	train_loss, train_acc, val_loss, val_acc, test_loss, test_acc = \
-		run(model, train_loader, test_loader, total_epoch=args.epoch,
+		run(model, train_loader, None, total_epoch=args.epoch,
 			lr = args.learning_rate, momentum=args.momentum, result_path=args.result_path,
-			num_valid_batch=num_valid_batch)
+			valid_loader=valid_loader)
+
+	plt.plot(range(1, 1+args.epoch), train_loss, 'ro-', label='train')
+	plt.plot(range(1, 1+args.epoch), val_loss, 'bs-', label='valid')
+
+	plt.xlabel('Epoch')
+	plt.ylabel('Loss')
+
+	plt.title('Epoch vs Loss')
+	plt.legend(loc=4)
+
+	plt.savefig('{}/Learning_Curves_4_loss.png'.format(args.result_path))
+	plt.clf()
 
 	plt.plot(range(1, 1+args.epoch), train_acc, 'ro-', label='train')
 	plt.plot(range(1, 1+args.epoch), val_acc, 'bs-', label='valid')
@@ -70,3 +85,4 @@ if __name__ == '__main__':
 	plt.legend(loc=4)
 
 	plt.savefig('{}/Learning_Curves_4_result.png'.format(args.result_path))
+	plt.clf()

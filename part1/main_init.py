@@ -16,6 +16,8 @@ def parse():
 	parser.add_argument('--epoch', default=10, type=int, help='Number of epochs')
 	parser.add_argument('-r', '--result_path', default='./result', type=str,
 						help='Result path')
+	parser.add_argument('-a', '--alpha', default=1.0, type=float,
+						help='Alpha')
 
 	args = parser.parse_args()
 	return args
@@ -31,13 +33,20 @@ if __name__ == '__main__':
 
 	output_model_setting(args)
 
+	if args.alpha > 1:
+		print 'Alpha has to be in range (0,1].'
+		exit()
+
 	torch.manual_seed(args.seed)
 
 	if use_cuda:
 		torch.cuda.manual_seed_all(args.seed)
 
-	train_loader, _ = load_data(batch_size=args.batch_size,
-								test_batch_size=args.test_batch_size)
+	train_loader, _, _ = load_data(batch_size=args.batch_size,
+								   test_batch_size=args.test_batch_size,
+								   alpha=args.alpha)
+
+	print 'Number of training data: {}\n'.format(len(train_loader.dataset))
 
 	results = {}
 
